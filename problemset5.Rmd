@@ -1,0 +1,16 @@
+---
+title: "some title"
+author: "Faria Khandaker, Asel Kushkeyeva, and Shabrina Mardevi"
+date: "04/05/2020"
+output:
+  pdf_document:
+    latex_engine: lualatex
+  html_document:
+    df_print: paged
+    
+font: 12pt
+abstract:
+---
+```{r}
+
+```
