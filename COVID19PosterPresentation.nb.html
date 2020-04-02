@@ -1753,17 +1753,43 @@ summary {
 <p>Try executing this chunk by clicking the <em>Run</em> button within the chunk or by placing your cursor inside it and pressing <em>Ctrl+Shift+Enter</em>.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxvdChjYXJzKVxuYGBgIn0= -->
-<pre class="r"><code>plot(cars)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KGJyb29tKVxubGlicmFyeShqYW5pdG9yKVxubGlicmFyeShkcGx5cilcbmBgYCJ9 -->
+<pre class="r"><code>library(tidyverse)
+library(broom)
+library(janitor)
+library(dplyr)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-<p>Add a new chunk by clicking the <em>Insert Chunk</em> button on the toolbar or by pressing <em>Ctrl+Alt+I</em>.</p>
-<p>When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the <em>Preview</em> button or press <em>Ctrl+Shift+K</em> to preview the HTML file).</p>
-<p>The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike <em>Knit</em>, <em>Preview</em> does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.</p>
 <!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29jYW5hZGEgPC0gcmVhZC5jc3YoXCJDOi9Vc2Vycy9mYXJpYS9EZXNrdG9wL0lORjIxNzgvcG9zdGVyIHByZXNlbnRhdGlvbi9jb3ZpZGNhbmFkYS5jc3ZcIilcbmNvdXNjb3VudHkgPC1yZWFkLmNzdihcIkM6L1VzZXJzL2ZhcmlhL0Rlc2t0b3AvSU5GMjE3OC9wb3N0ZXIgcHJlc2VudGF0aW9uL2NvdmlkdXNjb3VudGllczAzMzAuY3N2XCIpXG5cbmBgYCJ9 -->
+<pre class="r"><code>cocanada &lt;- read.csv(&quot;C:/Users/faria/Desktop/INF2178/poster presentation/covidcanada.csv&quot;)
+couscounty &lt;-read.csv(&quot;C:/Users/faria/Desktop/INF2178/poster presentation/coviduscounties0330.csv&quot;)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudmFuY2FuIDwtIGNvY2FuYWRhICU+JVxuICBzZWxlY3QoY2FzZV9pZCxhZ2Usc2V4LGhlYWx0aF9yZWdpb24sZGF0ZV9yZXBvcnQsIHRyYXZlbF95biwgdHJhdmVsX2hpc3RvcnlfY291bnRyeSxsb2NhbGx5X2FjcXVpcmVkKSU+JVxuICBmaWx0ZXIoaGVhbHRoX3JlZ2lvbj09XCJWYW5jb3V2ZXIgQ29hc3RhbFwiKVxuXG5gYGAifQ== -->
+<pre class="r"><code>vancan &lt;- cocanada %&gt;%
+  select(case_id,age,sex,health_region,date_report, travel_yn, travel_history_country,locally_acquired)%&gt;%
+  filter(health_region==&quot;Vancouver Coastal&quot;)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudGFyZ2V0IDwtIGMoXCJTbm9ob21pc2hcIiwgXCJLaW5nXCIsIFwiUGllcmNlXCIpXG5zZWF1c2EgPC0gY291c2NvdW50eSAlPiVcbiAgc2VsZWN0KC1maXBzKSU+JVxuICBmaWx0ZXIoY291bnR5ICVpbiUgdGFyZ2V0KVxuXG5gYGAifQ== -->
+<pre class="r"><code>target &lt;- c(&quot;Snohomish&quot;, &quot;King&quot;, &quot;Pierce&quot;)
+seausa &lt;- couscounty %&gt;%
+  select(-fips)%&gt;%
+  filter(county %in% target)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkNPVklEIGNhc2VzIFZhbmNvdXZlciAiDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQpUaGlzIGlzIGFuIFtSIE1hcmtkb3duXShodHRwOi8vcm1hcmtkb3duLnJzdHVkaW8uY29tKSBOb3RlYm9vay4gV2hlbiB5b3UgZXhlY3V0ZSBjb2RlIHdpdGhpbiB0aGUgbm90ZWJvb2ssIHRoZSByZXN1bHRzIGFwcGVhciBiZW5lYXRoIHRoZSBjb2RlLiANCg0KVHJ5IGV4ZWN1dGluZyB0aGlzIGNodW5rIGJ5IGNsaWNraW5nIHRoZSAqUnVuKiBidXR0b24gd2l0aGluIHRoZSBjaHVuayBvciBieSBwbGFjaW5nIHlvdXIgY3Vyc29yIGluc2lkZSBpdCBhbmQgcHJlc3NpbmcgKkN0cmwrU2hpZnQrRW50ZXIqLiANCg0KYGBge3J9DQpwbG90KGNhcnMpDQpgYGANCg0KQWRkIGEgbmV3IGNodW5rIGJ5IGNsaWNraW5nIHRoZSAqSW5zZXJ0IENodW5rKiBidXR0b24gb24gdGhlIHRvb2xiYXIgb3IgYnkgcHJlc3NpbmcgKkN0cmwrQWx0K0kqLg0KDQpXaGVuIHlvdSBzYXZlIHRoZSBub3RlYm9vaywgYW4gSFRNTCBmaWxlIGNvbnRhaW5pbmcgdGhlIGNvZGUgYW5kIG91dHB1dCB3aWxsIGJlIHNhdmVkIGFsb25nc2lkZSBpdCAoY2xpY2sgdGhlICpQcmV2aWV3KiBidXR0b24gb3IgcHJlc3MgKkN0cmwrU2hpZnQrSyogdG8gcHJldmlldyB0aGUgSFRNTCBmaWxlKS4NCg0KVGhlIHByZXZpZXcgc2hvd3MgeW91IGEgcmVuZGVyZWQgSFRNTCBjb3B5IG9mIHRoZSBjb250ZW50cyBvZiB0aGUgZWRpdG9yLiBDb25zZXF1ZW50bHksIHVubGlrZSAqS25pdCosICpQcmV2aWV3KiBkb2VzIG5vdCBydW4gYW55IFIgY29kZSBjaHVua3MuIEluc3RlYWQsIHRoZSBvdXRwdXQgb2YgdGhlIGNodW5rIHdoZW4gaXQgd2FzIGxhc3QgcnVuIGluIHRoZSBlZGl0b3IgaXMgZGlzcGxheWVkLg0K</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkNPVklEIGNhc2VzIFZhbmNvdXZlciAiDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQpUaGlzIGlzIGFuIFtSIE1hcmtkb3duXShodHRwOi8vcm1hcmtkb3duLnJzdHVkaW8uY29tKSBOb3RlYm9vay4gV2hlbiB5b3UgZXhlY3V0ZSBjb2RlIHdpdGhpbiB0aGUgbm90ZWJvb2ssIHRoZSByZXN1bHRzIGFwcGVhciBiZW5lYXRoIHRoZSBjb2RlLiANCg0KVHJ5IGV4ZWN1dGluZyB0aGlzIGNodW5rIGJ5IGNsaWNraW5nIHRoZSAqUnVuKiBidXR0b24gd2l0aGluIHRoZSBjaHVuayBvciBieSBwbGFjaW5nIHlvdXIgY3Vyc29yIGluc2lkZSBpdCBhbmQgcHJlc3NpbmcgKkN0cmwrU2hpZnQrRW50ZXIqLiANCg0KYGBge3J9DQpsaWJyYXJ5KHRpZHl2ZXJzZSkNCmxpYnJhcnkoYnJvb20pDQpsaWJyYXJ5KGphbml0b3IpDQpsaWJyYXJ5KGRwbHlyKQ0KYGBgDQoNCmBgYHtyfQ0KY29jYW5hZGEgPC0gcmVhZC5jc3YoIkM6L1VzZXJzL2ZhcmlhL0Rlc2t0b3AvSU5GMjE3OC9wb3N0ZXIgcHJlc2VudGF0aW9uL2NvdmlkY2FuYWRhLmNzdiIpDQpjb3VzY291bnR5IDwtcmVhZC5jc3YoIkM6L1VzZXJzL2ZhcmlhL0Rlc2t0b3AvSU5GMjE3OC9wb3N0ZXIgcHJlc2VudGF0aW9uL2NvdmlkdXNjb3VudGllczAzMzAuY3N2IikNCg0KYGBgDQoNCmBgYHtyIHZhbmNvdXZlciBjYW5hZGF9DQp2YW5jYW4gPC0gY29jYW5hZGEgJT4lDQogIHNlbGVjdChjYXNlX2lkLGFnZSxzZXgsaGVhbHRoX3JlZ2lvbixkYXRlX3JlcG9ydCwgdHJhdmVsX3luLCB0cmF2ZWxfaGlzdG9yeV9jb3VudHJ5LGxvY2FsbHlfYWNxdWlyZWQpJT4lDQogIGZpbHRlcihoZWFsdGhfcmVnaW9uPT0iVmFuY291dmVyIENvYXN0YWwiKQ0KDQpgYGANCmBgYHtyIHNlYXR0bGUgVVNBfQ0KdGFyZ2V0IDwtIGMoIlNub2hvbWlzaCIsICJLaW5nIiwgIlBpZXJjZSIpDQpzZWF1c2EgPC0gY291c2NvdW50eSAlPiUNCiAgc2VsZWN0KC1maXBzKSU+JQ0KICBmaWx0ZXIoY291bnR5ICVpbiUgdGFyZ2V0KQ0KDQpgYGA=</div>
 
 
 
