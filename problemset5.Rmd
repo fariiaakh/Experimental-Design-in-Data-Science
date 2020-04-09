@@ -1,6 +1,6 @@
 ---
 title: "some title"
-author: "Faria Khandaker, Asel Kushkeyeva, and Shabrina Mardevi"
+author: "Faria Khandaker"
 date: "04/05/2020"
 output:
   pdf_document:
@@ -12,5 +12,20 @@ font: 12pt
 abstract:
 ---
 ```{r}
+library(tidyverse)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(haven)
+```
 
+```{r}
+data <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable1.dta")
+data2 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable2.dta")
+data3 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable3.dta")
+data4 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable4.dta")
+data5 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable5.dta")
+data6 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable6.dta")
+data7 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable7.dta")
+data8 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable8.dta")
 ```
