@@ -1,0 +1,35 @@
+---
+title: "COVID cases Vancouver "
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(tidyverse)
+library(broom)
+library(janitor)
+library(dplyr)
+```
+
+```{r}
+cocanada <- read.csv("C:/Users/faria/Desktop/INF2178/poster presentation/covidcanada.csv")
+couscounty <-read.csv("C:/Users/faria/Desktop/INF2178/poster presentation/coviduscounties0330.csv")
+
+```
+
+```{r vancouver canada}
+vancan <- cocanada %>%
+  select(case_id,age,sex,health_region,date_report, travel_yn, travel_history_country,locally_acquired)%>%
+  filter(health_region=="Vancouver Coastal")
+
+```
+```{r seattle USA}
+target <- c("Snohomish", "King", "Pierce")
+seausa <- couscounty %>%
+  select(-fips)%>%
+  filter(county %in% target)
+
+```
