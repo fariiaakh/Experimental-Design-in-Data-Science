@@ -1,5 +1,5 @@
 ---
-title: "some title"
+title: "Influence of colonialism on today's economies"
 author: "Faria Khandaker"
 date: "04/05/2020"
 output:
@@ -9,7 +9,7 @@ output:
     df_print: paged
     
 font: 12pt
-abstract:
+abstract: "abstract"
 ---
 ```{r}
 library(tidyverse)
@@ -20,12 +20,145 @@ library(haven)
 ```
 
 ```{r}
-data <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable1.dta")
-data2 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable2.dta")
-data3 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable3.dta")
 data4 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable4.dta")
 data5 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable5.dta")
 data6 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable6.dta")
-data7 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable7.dta")
-data8 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable8.dta")
+```
+
+```{r select only 63 countries that are excolonies}
+
+excolonies <- tibble(country=data4$shortnam,
+                     samples=data4$baseco,
+                     dummy_africa=data4$africa,
+                     dummy_asia=data4$asia,
+                     dummy_neu=data4$rich4,
+                     britcol=data5$f_brit,
+                     frencol=data5$f_french,
+                     landlocked=data6$landlock,
+                     settler_mortality=data4$logem4,
+                     expro_pro=data4$avexpr, 
+                     gdppc=data4$logpgp95
+          
+                     )%>% subset(samples==1)
+
+
+
+excolonies<-excolonies %>% mutate(counttrycol= case_when(
+                                  britcol==1~"British",
+                                  frencol==1~"French",
+                                  britcol==0~"Other",
+                                  frencol==0~"Other"))
+
+#latin american / caribbean countries
+excolonies2<-excolonies%>%mutate(nonasaf=if_else(dummy_africa==0&&dummy_asia==0&&dummy_neu==0,1,0))
+
+excolonies2<-excolonies%>%mutate(nonasaf=case_when(
+  dummy_africa==0&&dummy_asia==0&&dummy_neu==0~1,
+  dummy_africa==1&&dummy_asia==0&&dummy_neu==0~0,
+  dummy_africa==0&&dummy_asia==1&&dummy_neu==0~0,
+  dummy_africa==0&&dummy_asia==0&&dummy_neu==1~0
+))
+
+excolnocon <- excolonies %>% subset(dummy_africa==0)%>%
+  subset(dummy_asia==0)%>%
+  subset(dummy_neu==0)
+
+nonafrican <-
+  excolonies %>%
+  filter(dummy_africa == "0")
+
+african<-
+excolonies %>%
+  filter(dummy_africa == "1")
+
+nonasian<-excolonies %>%
+  filter(dummy_asia == "0")
+
+asian<-excolonies %>%
+  filter(dummy_asia == "1")
+
+non_neu <- excolonies %>%
+  filter(dummy_neu == "0")
+
+neu <- excolonies %>%
+  filter(dummy_neu == "1")
+
+```
+
+```{r lm mortalgdp}
+mortalgdp <- lm(gdppc~settler_mortality, data=excolonies)
+summary(mortalgdp)
+```
+```{r lm mortalexpro}
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=excolonies)
+summary(mortalexpro)
+```
+```{r}
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+#coef(mortalexpro)["settler_mortality"]/ coef(mortalgdp)["settler_mortality"]=1.059
+
+```
+
+```{r histogram for gdp and expropriation}
+excolonies2$dummy_asia<-as.factor(excolonies2$dummy_asia)
+ggplot(data=excolonies2,mapping=aes(x=expro_pro, fill=counttry))+
+  geom_histogram(position="dodge",binwidth=0.2)+theme_minimal()+scale_fill_brewer(palette = "Set1")+facet_wrap(vars(counttrycol), nrow=3)
+
+```
+
+```{r mortal gdp}
+
+ggplot(data=excolonies2)+
+  geom_point(mapping=aes(x=settler_mortality, 
+                         y=gdppc, color=counttrycol))+
+  geom_abline(intercept = 10.73, 
+              slope=-0.5729, color="red")
+
+```
+```{r mortal expro}
+
+ggplot(data=excolonies2)+
+  geom_point(mapping=aes(x=settler_mortality,
+                         y=expro_pro,colour=dummy_neu))+
+  geom_abline(intercept = 9.3414, 
+              slope=-0.6068, color="red")
+
+```
+
+```{r 2 stages excolonies}
+first_stage <- lm(expro_pro~settler_mortality, data=excolonies)
+smortal_hat <- first_stage$fitted.values
+second_stage <- lm(gdppc~smortal_hat, data=excolonies)
+
+summary(first_stage)
+summary(second_stage)
+
+
+```
+
+```{r mortal gdp excolnocon}
+# relation b/w settler mortality,gdp and expropriation for latin american and caribbean countries
+
+mortalgdpnocon <- lm(gdppc~settler_mortality, data=excolnocon)
+mortalexpronocon <- lm(expro_pro~settler_mortality, data=excolnocon)
+summary(mortalgdpnocon)
+summary(mortalexpronocon)
+
+coef(mortalgdpnocon)["settler_mortality"]/coef(mortalexpronocon)["settler_mortality"]
+
+
+first_stage1<-mortalexpronocon
+smortalnocon<-mortalexpronocon$fitted.values
+second_stage1<-lm(gdppc~smortalnocon,data=excolnocon)
+summary(second_stage1)
+
+```
+
+```{r LA and Carib colonies }
+ggplot(data=excolnocon)+
+  geom_point(mapping=aes(x=settler_mortality, 
+                         y=gdppc, color=counttrycol))+facet_wrap(~counttrycol)+ylim(4,10)+
+  geom_abline(intercept = 10.55, slope=-0.4687, color="red")
+
 ```
