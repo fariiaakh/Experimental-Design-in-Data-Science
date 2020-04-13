@@ -3,15 +3,15 @@ title: "Divides in Development: An Analysis on the Impact of Modern Western Colo
 author: "Faria Khandaker"
 date: "04/12/2020"
 output:
+  pdf_document:
+    latex_engine: lualatex
   html_document:
     
     df_print: paged
-  pdf_document:
-    latex_engine: lualatex
 font: 12pt
 abstract: "The effects of Modern Western Colonialism are still visible in today's global political landscape. In my replication experiment, settler mortality is used as an instrumental variable to investigate the relationship between protection against expropriation and Gross Domestic Product per capita of former colonies. Former colonies with strong protection against expropriation tend to enjoy higher GDP per capita today. Whether or not the colonial powers established strong protections against expropriation laws can explain Colonies with high settler mortality were less Strong land ownership laws are often attributed with strong legal systems in countries which impact protection of private enterprises. land owners from corrupt government What was done, what was found and why it matters?"
 ---
-```{r, echo=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(tidyverse)
 library(dplyr)
 library(janitor)
@@ -103,7 +103,13 @@ The effects of colonization are deeply embedded into today's global political la
 
 
 # Discussion and Analysis
-```{r mortal gdp expro for all excolonies, echo=FALSE}
+
+## Model
+
+$$R_i=\zeta+\beta(log)M_i+X_i(\delta)+\upsilon_{i} $$
+$$log(y_i) =\mu+\alpha R_i+X_i(\gamma) +\epsilon_i $$
+
+```{r mortal gdp expro for all excolonies, message=FALSE, warning=FALSE, include=FALSE}
 mortalgdp<- lm(gdppc~settler_mortality, data=excolonies)
 
 mortalexpro<-lm(expro_pro~settler_mortality, data=excolonies)
@@ -112,10 +118,10 @@ coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 
 
 ```
-```{r 2 stages effect of expropriation on GDP}
+```{r 2 stages effect of expropriation on GDP, include=FALSE}
 first_stage <- lm(expro_pro~settler_mortality, data=excolonies)
-smortal_hat <- first_stage$fitted.values
-second_stage <- lm(gdppc~smortal_hat, data=excolonies)
+Expropriation_Protection <- first_stage$fitted.values
+second_stage <- lm(gdppc~Expropriation_Protection, data=excolonies)
 
 
 ```
@@ -128,31 +134,31 @@ mortalgdp <- lm(gdppc~settler_mortality, data=non_african)
 mortalexpro <- lm(expro_pro~settler_mortality, data=non_african)
 
 ```
-```{r non_african effect of expropriation on gdp, echo=FALSE}
+```{r non_african effect of expropriation on gdp, include=FALSE}
 coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 first_stage4<-mortalexpro
-smortal_hat<-mortalexpro$fitted.values
-second_stage4<-lm(gdppc~smortal_hat,data=non_african)
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage4<-lm(gdppc~Expropriation_Protection,data=non_african)
 
 
 ```
-```{r lm mortalgdp excolonies2, echo=FALSE}
+```{r lm mortalgdp excolonies2, include=FALSE}
 mortalgdp <- lm(gdppc~settler_mortality, data=excolonies2)
 
 
 mortalexpro <- lm(expro_pro~settler_mortality, data=excolonies2)
 
 ```
-```{r excolonies2 effect of expropriation on gdp }
+```{r excolonies2 effect of expropriation on gdp, message=FALSE, warning=FALSE, include=FALSE}
 coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 
 first_stage2<-mortalexpro
-smortal_hat<-mortalexpro$fitted.values
-second_stage2<-lm(gdppc~smortal_hat,data=excolonies2)
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage2<-lm(gdppc~Expropriation_Protection,data=excolonies2)
 
 
 ```
-```{r OLS regression of colonies, echo=FALSE}
+```{r OLS regression of colonies, message=FALSE, warning=FALSE, include=FALSE}
 #excolonies
 exprogdp<-lm(gdppc~expro_pro, data=excolonies)
 
@@ -164,25 +170,22 @@ exprogdpnonaf<-lm(gdppc~expro_pro, data=non_african)
 
 ```
 
-```{r summary stats table, echo=FALSE}
-#Exclusive_table<-huxreg("Neu"=second_stage8,"Africa"=second_stage3,  "Asia"=second_stage5,"Latin/Carib"= second_stage1)
+
+```{r summary stats table, echo=FALSE, message=FALSE, warning=FALSE}
 
 inclusive_first_stage<-huxreg("Excolonies"=first_stage, "Non Neu"=first_stage2, "Non_African"=first_stage4)
 
-Inclusive_table<-huxreg("Excolonies"=second_stage,"Non Neu"=second_stage2,"Non_African"=second_stage4)
+inclusive_second_stage<-huxreg("Excolonies"=second_stage,"Non Neu"=second_stage2,"Non_African"=second_stage4)
 #,"Non-Asia"=second_stage6, "Non_Latin/Carib"=second_stage7
 
 inclusive_ols<-huxreg("Excolonies"=exprogdp, "Non Neu"=exprogdp2, "Non_African"=exprogdpnonaf)
 
-#Exclusive_table
-#Inclusive_table
-#inclusive_first_stage
-#inclusive_ols
-binded<-rbind(Inclusive_table,inclusive_first_stage,inclusive_ols)
+binded<-rbind(inclusive_second_stage,inclusive_first_stage,inclusive_ols)
+caption(binded)<-"Table 1: Summary Statistics of Variables Considered"
+height(binded)<-3
 binded
-
-
 ```
+Table 1 contains summary statistics of the variables used in this study and their relationships to one another.
 
 ```{r expro vs gdp, echo=FALSE}
 exprogdp<-lm(gdppc~expro_pro, data=excolonies)
@@ -205,13 +208,12 @@ ggplot(data=excolonies)+
 ```
 ```{r mortalexpro excolonies graph, echo=FALSE}
 mortalgdp<-lm(expro_pro~settler_mortality,data=excolonies)
-summary(mortalgdp)
 ggplot(data=excolonies)+
   geom_point(mapping=aes(x=settler_mortality,
                          y=expro_pro,colour=counttrycol))+
   geom_abline(intercept = 9.341, 
               slope=-0.607, color="red")+theme(legend.position = "bottom",
-        text=element_text(size=10))+labs(title="Figure 3: Relationship between settler mortality and Protection Against Expropriation",x="Settler Mortality", y="Protection against Expropriation",colour="Colonial Power")
+        text=element_text(size=10))+labs(title="Figure 3: Relationship between settler mortality and Expropriation Protection",x="Settler Mortality", y="Protection against Expropriation",colour="Colonial Power")
 
 ```
 
@@ -227,7 +229,7 @@ ggplot(data=excolonies)+
 
 
 # Conclusion
-
+Colonialism was bad news for native populations across all colonies. The places in the world where European settlers could settle had native populations being forced to give up their lands, let go of their culture and accept a foreign one as their own, and if that wasn't enough, they were being killed in the millions by European diseases like small  The colonies where europeans couldn't safely settle because of the prescence of endemic diseases like Yellow Fever and Malaria, natives faced exploitation, the robbery of resources and the establishment of weak political and legal structures that serve as obstacles for those countries to this day.
 
 # References
 
@@ -343,8 +345,8 @@ coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 #your gdp will increase by 2 points if you have strong expropriation laws
 
 first_stage3<-mortalexpro
-smortal_hat<-mortalexpro$fitted.values
-second_stage3<-lm(gdppc~smortal_hat,data=african)
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage3<-lm(gdppc~Expropriation_Protection,data=african)
 summary(second_stage3)
 ```
 ```{r Applm mortalgdp non_african}
@@ -360,8 +362,8 @@ summary(mortalexpro)
 ```{r Appnon_african effect of expropriation on gdp }
 coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 first_stage4<-mortalexpro
-smortal_hat<-mortalexpro$fitted.values
-second_stage4<-lm(gdppc~smortal_hat,data=non_african)
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage4<-lm(gdppc~Expropriation_Protection,data=non_african)
 summary(second_stage4)
 
 ```
@@ -379,8 +381,8 @@ summary(mortalexpro)
 ```{r asian effect of expropriation on gdp }
 coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 first_stage5<-mortalexpro
-smortal_hat<-mortalexpro$fitted.values
-second_stage5<-lm(gdppc~smortal_hat,data=asian)
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage5<-lm(gdppc~Expropriation_Protection,data=asian)
 summary(second_stage5)
 
 ```
@@ -398,8 +400,8 @@ summary(mortalexpro)
 ```{r non_asian effect of expropriation on gdp }
 coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 first_stage6<-mortalexpro
-smortal_hat<-mortalexpro$fitted.values
-second_stage6<-lm(gdppc~smortal_hat,data=non_asian)
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage6<-lm(gdppc~Expropriation_Protection,data=non_asian)
 summary(second_stage6)
 
 ```
@@ -419,8 +421,8 @@ summary(mortalexpro)
 ```{r nonlacar effect of expropriation on gdp }
 coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 first_stage7<-mortalexpro
-smortal_hat<-mortalexpro$fitted.values
-second_stage7<-lm(gdppc~smortal_hat,data=nonlacar)
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage7<-lm(gdppc~Expropriation_Protection,data=nonlacar)
 summary(second_stage7)
 
 ```
@@ -438,8 +440,8 @@ summary(mortalexpro)
 ```{r neu effect of expropriation on gdp }
 coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 first_stage8<-mortalexpro
-smortal_hat<-mortalexpro$fitted.values
-second_stage8<-lm(gdppc~smortal_hat,data=neu)
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage8<-lm(gdppc~Expropriation_Protection,data=neu)
 summary(second_stage8)
 
 ```
@@ -463,8 +465,8 @@ summary(mortalexpro)
 coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 
 first_stage2<-mortalexpro
-smortal_hat<-mortalexpro$fitted.values
-second_stage2<-lm(gdppc~smortal_hat,data=excolonies2)
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage2<-lm(gdppc~Expropriation_Protection,data=excolonies2)
 summary(second_stage2)
 
 ```
@@ -498,8 +500,8 @@ coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 ```
 ```{r App2 stages effect of expropriation on GDP}
 first_stage <- lm(expro_pro~settler_mortality, data=excolonies)
-smortal_hat <- first_stage$fitted.values
-second_stage <- lm(gdppc~smortal_hat, data=excolonies)
+Expropriation_Protection <- first_stage$fitted.values
+second_stage <- lm(gdppc~Expropriation_Protection, data=excolonies)
 summary(first_stage)
 summary(second_stage)
 
@@ -518,8 +520,8 @@ coef(mortalgdpnocon)["settler_mortality"]/coef(mortalexpronocon)["settler_mortal
 
 
 first_stage1<-mortalexpronocon
-smortal_hat<-mortalexpronocon$fitted.values
-second_stage1<-lm(gdppc~smortal_hat,data=excolnocon)
+Expropriation_Protection<-mortalexpronocon$fitted.values
+second_stage1<-lm(gdppc~Expropriation_Protection,data=excolnocon)
 summary(second_stage1)
 
 ```
