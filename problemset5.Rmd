@@ -1,5 +1,5 @@
 ---
-title: "Divides in Development: An Analysis on the Impact of Colonialism on Today's Economies"
+title: "Divides in Development: An Analysis on the Impact of Modern Western Colonialism on Today's Economies"
 author: "Faria Khandaker"
 date: "04/12/2020"
 output:
@@ -9,37 +9,212 @@ output:
   pdf_document:
     latex_engine: lualatex
 font: 12pt
-abstract: "What was done, what was found and why it matters?"
+abstract: "The effects of Modern Western Colonialism are still visible in today's global political landscape. In my replication experiment, settler mortality is used as an instrumental variable to investigate the relationship between protection against expropriation and Gross Domestic Product per capita of former colonies. Former colonies with strong protection against expropriation tend to enjoy higher GDP per capita today. Whether or not the colonial powers established strong protections against expropriation laws can explain Colonies with high settler mortality were less Strong land ownership laws are often attributed with strong legal systems in countries which impact protection of private enterprises. land owners from corrupt government What was done, what was found and why it matters?"
 ---
-# Introduction
+```{r, echo=FALSE}
+library(tidyverse)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(haven)
+library(huxtable)
+library(estimatr)
+```
+```{r,echo=FALSE}
+data4 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable4.dta")
+data5 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable5.dta")
+data6 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable6.dta")
+```
+```{r select only 63 countries that are excolonies, echo=FALSE}
 
+excolonies <- tibble(country=data4$shortnam,
+                     samples=data4$baseco,
+                     dummy_africa=data4$africa,
+                     dummy_asia=data4$asia,
+                     dummy_neu=data4$rich4,
+                     britcol=data5$f_brit,
+                     frencol=data5$f_french,
+                     landlocked=data6$landlock,
+                     settler_mortality=data4$logem4,
+                     expro_pro=data4$avexpr, 
+                     gdppc=data4$logpgp95
+          
+                     )%>% subset(samples==1)
+
+
+
+excolonies<-excolonies %>% mutate(counttrycol= case_when(
+                                  britcol==1~"British",
+                                  frencol==1~"French",
+                                  britcol==0~"Other",
+                                  frencol==0~"Other"))
+
+
+#latin american / caribbean countries
+
+excolonies<-
+  excolonies %>%
+  mutate(nonasaf= dummy_africa+dummy_asia+dummy_neu,
+         nonasaf=if_else(nonasaf==0,1,0))
+
+#only latin american and caribbean
+excolnocon <- excolonies %>% subset(dummy_africa==0)%>%
+  subset(dummy_asia==0)%>%
+  subset(dummy_neu==0)
+
+#excolonies is master table with everything
+
+#excolonies2 master table without dummy_neu, to take away outliers
+excolonies2<-excolonies[!(excolonies$dummy_neu==1),]
+
+
+#only africa
+african<-
+excolonies %>%
+  filter(dummy_africa == "1")
+
+# all colonies without africa
+non_african <-
+excolonies %>%
+  filter(dummy_africa == "0")
+
+#only asia
+asian<-excolonies %>%
+  filter(dummy_asia == "1")
+#all colonies without asia
+
+non_asian<-excolonies %>%
+  filter(dummy_asia == "0")
+#all colonies without latin america/caribbean
+nonlacar<- excolonies%>%
+  filter(nonasaf=="0")
+
+#only neo-europe
+neu <- excolonies %>%
+  filter(dummy_neu == "1")
+
+
+```
+
+# Introduction
+In 1492, Christopher Colombus with a crew of 90 men set sail from Spain on a mission to discover a sea route that would reach the spice ladened lands of India and China. He had no way of knowing that two giant landmasses stood in the way of his ambitions. His discovery of these new lands ignited the period of history dominated by the phenomenon of Western colonialism which saw 300 years of the slave trade, the decimation of entire Native populations through war and disease, and the emergence of European super powers whose wealth was attributed to amassing large amounts of precious metals and raw resources from their colonies.
+
+The effects of colonization are deeply embedded into today's global political landscape with many countries still coping with the aftermath of having been governed by a foreign power, often with little to no understanding of local cultures, for hundreds of years. Of course, colonization hasn't impacted all countrie equally. In the paper by Daron Acemoglu, Simon Johnson, and James A Robinson titled "The Colonial Origins of Comparative Development: An Empirical Investigation", it is hypothesized that different strategies used by colonial powers impacted how the colonies were governed. Colonies with stronger protection against expropriation 
 
 
 # Discussion and Analysis
+```{r mortal gdp expro for all excolonies, echo=FALSE}
+mortalgdp<- lm(gdppc~settler_mortality, data=excolonies)
 
+mortalexpro<-lm(expro_pro~settler_mortality, data=excolonies)
+
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+
+
+```
+```{r 2 stages effect of expropriation on GDP}
+first_stage <- lm(expro_pro~settler_mortality, data=excolonies)
+smortal_hat <- first_stage$fitted.values
+second_stage <- lm(gdppc~smortal_hat, data=excolonies)
+
+
+```
+```{r lm mortalgdp non_african, echo=FALSE}
+mortalgdp <- lm(gdppc~settler_mortality, data=non_african)
+
+```
+```{r lm mortalexpro non_african, echo=FALSE}
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=non_african)
+
+```
+```{r non_african effect of expropriation on gdp, echo=FALSE}
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+first_stage4<-mortalexpro
+smortal_hat<-mortalexpro$fitted.values
+second_stage4<-lm(gdppc~smortal_hat,data=non_african)
+
+
+```
+```{r lm mortalgdp excolonies2, echo=FALSE}
+mortalgdp <- lm(gdppc~settler_mortality, data=excolonies2)
+
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=excolonies2)
+
+```
+```{r excolonies2 effect of expropriation on gdp }
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+
+first_stage2<-mortalexpro
+smortal_hat<-mortalexpro$fitted.values
+second_stage2<-lm(gdppc~smortal_hat,data=excolonies2)
+
+
+```
+```{r OLS regression of colonies, echo=FALSE}
+#excolonies
+exprogdp<-lm(gdppc~expro_pro, data=excolonies)
+
+#excolonies2
+exprogdp2<-lm(gdppc~expro_pro, data=excolonies2)
+
+#non_african
+exprogdpnonaf<-lm(gdppc~expro_pro, data=non_african)
+
+```
+
+```{r summary stats table, echo=FALSE}
+#Exclusive_table<-huxreg("Neu"=second_stage8,"Africa"=second_stage3,  "Asia"=second_stage5,"Latin/Carib"= second_stage1)
+
+inclusive_first_stage<-huxreg("Excolonies"=first_stage, "Non Neu"=first_stage2, "Non_African"=first_stage4)
+
+Inclusive_table<-huxreg("Excolonies"=second_stage,"Non Neu"=second_stage2,"Non_African"=second_stage4)
+#,"Non-Asia"=second_stage6, "Non_Latin/Carib"=second_stage7
+
+inclusive_ols<-huxreg("Excolonies"=exprogdp, "Non Neu"=exprogdp2, "Non_African"=exprogdpnonaf)
+
+#Exclusive_table
+#Inclusive_table
+#inclusive_first_stage
+#inclusive_ols
+binded<-rbind(Inclusive_table,inclusive_first_stage,inclusive_ols)
+binded
+
+
+```
+
+```{r expro vs gdp, echo=FALSE}
+exprogdp<-lm(gdppc~expro_pro, data=excolonies)
+ggplot(data=excolonies)+
+  geom_point(mapping=aes(x=expro_pro, 
+                         y=gdppc, color=counttrycol))+
+  geom_abline(intercept = 4.660, 
+              slope=0.522, color="red")+theme(legend.position = "bottom",
+        text=element_text(size=10))+labs(title="Figure 1: Expropriation Protection VS GDP",x="Protection Against Expropriation", y="GDP Per Capita",colour="Colonial Power")
+
+```
 ```{r mortalgdp excolonies graph, echo=FALSE}
 ggplot(data=excolonies)+
   geom_point(mapping=aes(x=settler_mortality, 
                          y=gdppc, color=counttrycol))+
   geom_abline(intercept = 10.731, 
-              slope=-0.607, color="red")
+              slope=-0.607, color="red")+theme(legend.position = "bottom",
+        text=element_text(size=10))+labs(title="Figure 2: Relationship between settler mortality and GDP",x="Settler Mortality", y="GDP Per Capita",colour="Colonial Power")
 
 ```
 ```{r mortalexpro excolonies graph, echo=FALSE}
-mortalgdp<-lm(expro_pro~settler_mortality,data=excolonies2)
+mortalgdp<-lm(expro_pro~settler_mortality,data=excolonies)
 summary(mortalgdp)
 ggplot(data=excolonies)+
   geom_point(mapping=aes(x=settler_mortality,
                          y=expro_pro,colour=counttrycol))+
   geom_abline(intercept = 9.341, 
-              slope=-0.391, color="red")
+              slope=-0.607, color="red")+theme(legend.position = "bottom",
+        text=element_text(size=10))+labs(title="Figure 3: Relationship between settler mortality and Protection Against Expropriation",x="Settler Mortality", y="Protection against Expropriation",colour="Colonial Power")
 
 ```
-```{r expro vs gdp, echo=FALSE}
 
-
-
-```
 
 ### short comings and limitations
 
@@ -80,22 +255,9 @@ http://economics.mit.edu/faculty/acemoglu/data/ajr2001
 # Appendix
 
 
-```{r}
-library(tidyverse)
-library(dplyr)
-library(janitor)
-library(ggplot2)
-library(haven)
-library(huxtable)
-```
 
-```{r}
-data4 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable4.dta")
-data5 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable5.dta")
-data6 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable6.dta")
-```
 
-```{r select only 63 countries that are excolonies}
+```{r Appselect only 63 countries that are excolonies}
 
 excolonies <- tibble(country=data4$shortnam,
                      samples=data4$baseco,
@@ -185,17 +347,17 @@ smortal_hat<-mortalexpro$fitted.values
 second_stage3<-lm(gdppc~smortal_hat,data=african)
 summary(second_stage3)
 ```
-```{r lm mortalgdp non_african}
+```{r Applm mortalgdp non_african}
 mortalgdp <- lm(gdppc~settler_mortality, data=non_african)
 summary(mortalgdp)
 ```
-```{r lm mortalexpro non_african}
+```{r Applm mortalexpro non_african}
 
 mortalexpro <- lm(expro_pro~settler_mortality, data=non_african)
 summary(mortalexpro)
 
 ```
-```{r non_african effect of expropriation on gdp }
+```{r Appnon_african effect of expropriation on gdp }
 coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 first_stage4<-mortalexpro
 smortal_hat<-mortalexpro$fitted.values
@@ -290,14 +452,14 @@ ggplot(data=excolonies2,mapping=aes(x=expro_pro, fill=counttrycol))+
 
 ```
 ### Excolonies2 is includes all excolonies except the neo european first world countries
-```{r lm mortalgdp excolonies2}
+```{r Applm mortalgdp excolonies2}
 mortalgdp <- lm(gdppc~settler_mortality, data=excolonies2)
 summary(mortalgdp)
 
 mortalexpro <- lm(expro_pro~settler_mortality, data=excolonies2)
 summary(mortalexpro)
 ```
-```{r excolonies2 effect of expropriation on gdp }
+```{r appexcolonies2 effect of expropriation on gdp }
 coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 
 first_stage2<-mortalexpro
@@ -325,7 +487,7 @@ ggplot(data=excolonies2)+
 
 ```
 ### Excolonies contains all colonies including first world countries
-```{r mortal gdp expro for all excolonies}
+```{r Appmortal gdp expro for all excolonies}
 mortalgdp<- lm(gdppc~settler_mortality, data=excolonies)
 summary(mortalgdp)
 mortalexpro<-lm(expro_pro~settler_mortality, data=excolonies)
@@ -334,7 +496,7 @@ coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
 
 
 ```
-```{r 2 stages effect of expropriation on GDP}
+```{r App2 stages effect of expropriation on GDP}
 first_stage <- lm(expro_pro~settler_mortality, data=excolonies)
 smortal_hat <- first_stage$fitted.values
 second_stage <- lm(gdppc~smortal_hat, data=excolonies)
@@ -369,11 +531,35 @@ ggplot(data=excolnocon)+
 
 ```
 
-```{r summary stats table}
+```{r AppOLS regression of colonies}
+#excolonies
+exprogdp<-lm(gdppc~expro_pro, data=excolonies)
+summary(exprogdp)
+#excolonies2
+exprogdp2<-lm(gdppc~expro_pro, data=excolonies2)
+summary(exprogdp2)
+#non_african
+exprogdpnonaf<-lm(gdppc~expro_pro, data=non_african)
+summary(exprogdpnonaf)
+```
+
+```{r Appsummary stats table}
 Exclusive_table<-huxreg("Neu"=second_stage8,"Africa"=second_stage3,  "Asia"=second_stage5,"Latin/Carib"= second_stage1)
 
-Inclusive_table<-huxreg("Excolonies"=second_stage,"Non Neu"=second_stage2,"Non_Africa"=second_stage4,"Non-Asia"=second_stage6, "Non_Latin/Carib"=second_stage7)
+inclusive_first_stage<-huxreg("Excolonies"=first_stage, "Non Neu"=first_stage1, "Non_African"=first_stage4)
 
-Exclusive_table
-Inclusive_table
+Inclusive_table<-huxreg("Excolonies"=second_stage,"Non Neu"=second_stage2,"Non_African"=second_stage4)
+#,"Non-Asia"=second_stage6, "Non_Latin/Carib"=second_stage7
+
+inclusive_ols<-huxreg("Excolonies"=exprogdp, "Non Neu"=exprogdp2, "Non_African"=exprogdpnonaf)
+
+#Exclusive_table
+#Inclusive_table
+#inclusive_first_stage
+#inclusive_ols
+binded<-rbind(Inclusive_table,inclusive_first_stage,inclusive_ols)
+binded
+
+
 ```
+
