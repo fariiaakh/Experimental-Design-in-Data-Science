@@ -1,0 +1,642 @@
+---
+title: "Divides in Development: An Analysis on the Impact of Modern Western Colonialism on the Economies of Former Colonies"
+author: "Faria Khandaker"
+date: "04/12/2020"
+output:
+  pdf_document:
+    latex_engine: lualatex
+  html_document:
+    
+    df_print: paged
+font: 12pt
+abstract: "The effects of Modern Western Colonialism are still visible in today's global political landscape. In this replication experiment, settler mortality is used as an instrumental variable to investigate the relationship between protection against expropriation and Gross Domestic Product per capita of former colonies. Former colonies with strong protection against expropriation laws tend to enjoy higher GDP per capita today. A high GDP contributes to the financial stability of a country and allows its citizens to enjoy a higher quality of life. Finding out the root causes of financial instability of a country can aid in the development of strategies that lead to more stable future. What was done, what was found and why it matters?"
+---
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(haven)
+library(huxtable)
+library(estimatr)
+```
+```{r,echo=FALSE}
+data4 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable4.dta")
+data5 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable5.dta")
+data6 <- read_dta("C:/Users/faria/Desktop/INF2178/Problem Sets/problemset5/maketable6.dta")
+```
+```{r select only 63 countries that are excolonies, echo=FALSE}
+
+excolonies <- tibble(country=data4$shortnam,
+                     samples=data4$baseco,
+                     dummy_africa=data4$africa,
+                     dummy_asia=data4$asia,
+                     dummy_neu=data4$rich4,
+                     britcol=data5$f_brit,
+                     frencol=data5$f_french,
+                     landlocked=data6$landlock,
+                     settler_mortality=data4$logem4,
+                     expro_pro=data4$avexpr, 
+                     gdppc=data4$logpgp95
+          
+                     )%>% subset(samples==1)
+
+
+
+excolonies<-excolonies %>% mutate(counttrycol= case_when(
+                                  britcol==1~"British",
+                                  frencol==1~"French",
+                                  britcol==0~"Other",
+                                  frencol==0~"Other"))
+
+
+#latin american / caribbean countries
+
+excolonies<-
+  excolonies %>%
+  mutate(nonasaf= dummy_africa+dummy_asia+dummy_neu,
+         nonasaf=if_else(nonasaf==0,1,0))
+
+#only latin american and caribbean
+excolnocon <- excolonies %>% subset(dummy_africa==0)%>%
+  subset(dummy_asia==0)%>%
+  subset(dummy_neu==0)
+
+#excolonies is master table with everything
+
+#excolonies2 master table without dummy_neu, to take away outliers
+excolonies2<-excolonies[!(excolonies$dummy_neu==1),]
+
+
+#only africa
+african<-
+excolonies %>%
+  filter(dummy_africa == "1")
+
+# all colonies without africa
+non_african <-
+excolonies %>%
+  filter(dummy_africa == "0")
+
+#only asia
+asian<-excolonies %>%
+  filter(dummy_asia == "1")
+#all colonies without asia
+
+non_asian<-excolonies %>%
+  filter(dummy_asia == "0")
+#all colonies without latin america/caribbean
+nonlacar<- excolonies%>%
+  filter(nonasaf=="0")
+
+#only neo-europe
+neu <- excolonies %>%
+  filter(dummy_neu == "1")
+
+
+```
+
+# Introduction
+In 1492, Christopher Colombus with a crew of 90 men set sail from Spain on a mission to discover a sea route that would reach the spice ladened lands of India and China. He had no way of knowing that two giant landmasses stood in the way of his ambitions. His discovery of these new lands ignited the period of history dominated by the phenomenon of Western colonialism which saw 300 years of the slave trade, the decimation of entire Native populations through war and disease, and the emergence of European super powers whose wealth was attributed to amassing large amounts of precious metals and raw resources from their colonies.
+
+The effects of colonization are deeply embedded into today's global political landscape with many countries still coping with the aftermath of having been governed by foreign powers, often with little to no understanding of local cultures, for hundreds of years. Of course, the impact of colonization is not felt equally across all former Colonies. This report aims to investigate one of the proposed explanations for why this is the case. In the paper by Daron Acemoglu, Simon Johnson, and James A Robinson titled "The Colonial Origins of Comparative Development: An Empirical Investigation", it is hypothesized that different strategies used by colonial powers impacted how the colonies were governed which in turn impacted the kinds of institutions that were set up early in the history of the colony. These early institutions then evolved into the institutions currently present in those countries today. They hypothesized that the rate of mortality for European settlers was key to the strategy of governance colonial powers chose for certain colonies. Areas where disease was prevelent and the environment was not ideal for settling and raising a family, turned into extractive colonies whose main function was to gather raw materials for trade. Not many institutions needed to be established in colonies like these as there was no need to invest in infrastructure or in the workers.
+
+On the other hand, there were colonies termed "Neo Europe" which were also set up for extraction raw materials but the environment was safe for settling and so settlers tried to establish institutions similar to those that existed in their motherlands. Using the Settler Mortality rate as an instrumental variable, two stage least squares estimates were calculated to investigate the relationship between Expropriation Protection and GDP per capita. After running multiple 2SLS estimates using data from different colonies across 3 continents, it was found that the higher the protection against expropriation, the higher the GDP of a country appears to be.
+
+# The Dataset
+The dataset was made available by Daron Acemoglu and his colleagues at MIT. The link is provided in the Reference section of this report. The article contains eight tables which contain different summary statistics for different variables. The datasets is divided according to the tables they were used for. For this report, columns from datasets 4,5 and 6 were used for exploratory data analysis and for a deeper undestanding of the data. 
+The three key variables discussed in this report are Gross Domestic Product per capita (GDP), Expropriation Protection and Settler Mortalty. GDP is an economic measure of wealth of a country; it is the total value of all goods and services produced in a country in given period of time. Expropriation as term refers to the acquiring of private property by a government against the wishes of the propty owner.
+
+
+
+
+# Discussion and Analysis
+The Instrumental Variables (IV) approach allows us to discuss causality between variables when randomization is difficult to do. It is useful when we have treatment and control groups but the outcome of the experiment can be muddled due to variation between groups that are hard to control.
+For this experiment,We want to answer the question" What is the effect of institutions on economic performance?". We used the the variables of Expropriation Protection and Gross Domestic Product per capita of a country to answer this question. Why should we use expropriation protection? The literature suggests that countries with strong institutions tend to invest in infrastructure and human capital which aids in increasing a nation's wealth. A simple linear regression against the two variables would not give us accurate results as different countries would have different factors affecting why they may or may not invest as much as other countries. This is where, for the purposes of this specific research question, we can use European Settler Mortality as an instrumental variable to explain the relationship between GDP and Expropriation Protection. The hypothesis is that European Settlers established settlements in colonies which then led to the establishment of institutions to govern people and those past institutions developed over time to what exists today. 
+
+In the paper, Acemoglu runs the two stage least squares estimate, testing the strength of their hypothesis that settler mortality is a good instrumental variable because it is not influenced by any observable variable. They perform robust two stage least squares estimate on a number variables that could be indirectly related to settler mortality and economic outcomes. They include Latitude,temperature,soil quality, life expectancy and general health of the native population,etc. None of the results showed any significant impact on the Expropriation risk of the country or on settler mortality. The scope of this report, however is only to replicate and add to the results for table number four of the Acemoglu paper which summarizes the two stage least squares estimates for Expropriation risk and settler mortality in relation to the GDP per capital of former colonies. Table 1 contains the summary statistics for this replication experiment.
+
+## Models
+
+There are two models that can help us understand the relationships between the variables used for analysis. The first model explains the relationship between Income per capita and Protection against Expropriation Risk.The second model explains the relationship between Expropriation risk and settler mortality. 
+
+### Model 1: Linear Regression of Income per Capita and Expropriation Protection
+$$log(y_i) =\mu+\alpha R_i+X_i(\gamma) +\epsilon_i $$
+The variable y_i represents income per capita, R_i represents Protection against Expropriation risk, X_i adjusts for variation from other variables and E_i is an error term. This model attempts to explain the relationship between having strong legal institutions in place and the GDP of a country.If all other variables remain constant, a high R_i score will lead to a high Y_i score; the stronger the institutions are of a country, the higher their GDP will be.
+
+### Model 2: Linear Regression of Expropriation Protection and Settler Mortality
+$$R_i=\zeta+\beta(log)M_i+X_i(\delta)+\upsilon_{i} $$
+R_i is the the same as Model 1, the Protection against Expropriation Risk measure, M_i is the settler mortality rate per 1000 people. Settler mortality is not represented in model 1 and therefore is the instrumental variable whose effect on expropriation risk is tied back to income per capita to explain the relationship between expropriation and GDP. The assumption here is that settler mortality rate during colonial times is completely exogenous and unrelated to the current GDP per capita of a country that was a former colony. 
+
+```{r mortal gdp expro for all excolonies, message=FALSE, warning=FALSE, include=FALSE}
+mortalgdp<- lm(gdppc~settler_mortality, data=excolonies)
+
+mortalexpro<-lm(expro_pro~settler_mortality, data=excolonies)
+
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+
+
+```
+```{r 2 stages effect of expropriation on GDP, include=FALSE}
+first_stage <- lm(expro_pro~settler_mortality, data=excolonies)
+Expropriation_Protection <- first_stage$fitted.values
+second_stage <- lm(gdppc~Expropriation_Protection, data=excolonies)
+
+
+```
+```{r lm mortalgdp non_african, echo=FALSE}
+mortalgdp <- lm(gdppc~settler_mortality, data=non_african)
+
+```
+```{r lm mortalexpro non_african, echo=FALSE}
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=non_african)
+
+```
+```{r non_african effect of expropriation on gdp, include=FALSE}
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+first_stage4<-mortalexpro
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage4<-lm(gdppc~Expropriation_Protection,data=non_african)
+
+
+```
+```{r lm mortalgdp excolonies2, include=FALSE}
+mortalgdp <- lm(gdppc~settler_mortality, data=excolonies2)
+
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=excolonies2)
+
+```
+```{r excolonies2 effect of expropriation on gdp, message=FALSE, warning=FALSE, include=FALSE}
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+
+first_stage2<-mortalexpro
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage2<-lm(gdppc~Expropriation_Protection,data=excolonies2)
+
+
+```
+```{r OLS regression of colonies, message=FALSE, warning=FALSE, include=FALSE}
+#excolonies
+exprogdp<-lm(gdppc~expro_pro, data=excolonies)
+
+#excolonies2
+exprogdp2<-lm(gdppc~expro_pro, data=excolonies2)
+
+#non_african
+exprogdpnonaf<-lm(gdppc~expro_pro, data=non_african)
+
+```
+
+
+```{r summary stats table, echo=FALSE, fig.height=2, fig.width=2, message=FALSE, warning=FALSE}
+
+inclusive_first_stage<-huxreg("Excolonies"=first_stage, "Non Neu"=first_stage2, "Non_African"=first_stage4)
+caption(inclusive_first_stage)<-"First Stage for Average Protection against Expropriation"
+
+inclusive_second_stage<-huxreg("Excolonies"=second_stage,"Non Neu"=second_stage2,"Non_African"=second_stage4)
+caption(inclusive_second_stage)<-"Two Stage Least Squares"
+
+inclusive_ols<-huxreg("Excolonies"=exprogdp, "Non Neu"=exprogdp2, "Non_African"=exprogdpnonaf)
+caption(inclusive_ols)<-"Ordinary Least Squares"
+binded<-rbind(inclusive_second_stage,inclusive_first_stage,inclusive_ols)
+caption(binded)<-"Table 1: Summary Statistics of Variables Considered"
+
+binded
+
+```
+
+Table 1 contains summary statistics of the variables used in this study and their relationships to one another. It is divided into 3 rows and should be read as follows: 
+There is a negative correlation across all colonies between Settler Mortality and Expropriation protection; the higher the settle mortality, the lower the expropriation protection.(See tables 2 and 3 in the appendix for continent specific data)
+```{r expro vs gdp, echo=FALSE}
+exprogdp<-lm(gdppc~expro_pro, data=excolonies)
+ggplot(data=excolonies)+
+  geom_point(mapping=aes(x=expro_pro, 
+                         y=gdppc, color=counttrycol))+
+  geom_abline(intercept = 4.660, 
+              slope=0.522, color="red")+theme(legend.position = "bottom",
+        text=element_text(size=10))+labs(title="Figure 1: Expropriation Protection VS GDP",x="Protection Against Expropriation", y="GDP Per Capita",colour="Colonial Power")
+
+```
+```{r mortalgdp excolonies graph, echo=FALSE}
+ggplot(data=excolonies)+
+  geom_point(mapping=aes(x=settler_mortality, 
+                         y=gdppc, color=counttrycol))+
+  geom_abline(intercept = 10.731, 
+              slope=-0.607, color="red")+theme(legend.position = "bottom",
+        text=element_text(size=10))+labs(title="Figure 2: Relationship between settler mortality and GDP",x="Settler Mortality", y="GDP Per Capita",colour="Colonial Power")
+
+```
+```{r mortalexpro excolonies graph, echo=FALSE}
+mortalgdp<-lm(expro_pro~settler_mortality,data=excolonies)
+ggplot(data=excolonies)+
+  geom_point(mapping=aes(x=settler_mortality,
+                         y=expro_pro,colour=counttrycol))+
+  geom_abline(intercept = 9.341, 
+              slope=-0.607, color="red")+theme(legend.position = "bottom",
+        text=element_text(size=10))+labs(title="Figure 3: Relationship between settler mortality and Expropriation Protection",x="Settler Mortality", y="Protection against Expropriation",colour="Colonial Power")
+
+```
+
+Figure 1 shows the relationship between Expropriation risk and GDP per capita. The relationship is a strong positive one where high protection against expropriation is correlated with high GDP per capita. The datapoints are coloured according to the colonial power which dominated the colonies. The 5 former british colonies clustered around the top right hand corner of the plot are the countries of Canada, America, Australia, New Zealand and Singapore. 
+
+Figures 1, 2 and 3 clearly depict that all colonial powers owned colonies across the spectrum; no one colonial power had less settler deaths compared to others. This is to say that no one colonial power did a better job at ruling over people than others. 
+
+# Shortcomings and Limitations
+
+While the tests and analyses done on various variables were very rigorous, the dataset used in the paper has potential biases within it. The authors were limited by the information available on settler mortality in creating their testing dataset. Not all former colonies are used in this experiment; much of the Middle East came under British rule but those countries are not a part of the test dataset. The results may be different if the settler mortality for those colonies are used find the strength of the relationship between expropriation protection and GDP per capita. Acemoglu mentions in his paper that the term "institutions" is used in the general sense and there is nothing  specifying which institutions can reduce the risk of expropriation or even how to establish them. There are many aspects to consider for the establishment of a "strong institution"; Which political system is better, what does a strong legal system look like, socialism or capitalism, etc. In addition to finding a relationship between expropriation protection and GDP, future studies should point out patterns in the structures of institutions of high GDP countries.  
+
+Technological advancement played a huge role in the colonization of the continents. In fact it was after the first industrial revolution in Europe that colonial powers had been able to travel from the exterior to the interior of Africa. There may be a correlation between advancements in medicine and locomotive technology and a decreasing settler mortality rate which lead to the expansion of colonies in Africa in the late stages of Colonialism (Modern Democratic Republic of the Congo was Belgian Colony from 1908 to 1960). Colonies could not be established if people couldn't reach a particular land and for many of the colonies like the Congo and New Zealand, it was the advancements in technology that allowed colonizers to overtake the natives. The land was made safe for settlement.
+
+Another limitation of this paper is that the establishment of arbitrary borders by colonial powers is not taken into consideration. As mentioned previously, the colonial powers established colonies for their own personal gains, regardless of whether the colony was extractive or Neo-European. They did not consider the social tensions between natives of the land. In some cases they created tensions between cohesive groups by favouring one group over the other (for example, the Hutus and Tutsis of Rwanda). Establishing borders where people of a common culture are separated or people of different cultures are forced to work with each other will create opportunities for conflict no matter how many well established institutions may exist in a country. While culture may not impact GDP (as tested and discussed in the paper), cultural tensions can. 
+
+In his paper,Acemoglu did not analyze data for individual continents; his analysis only went to the extent of excluding Neo European Colonies and African Colonies. Exclusion of Asia or the Latin American and caribbean colonies were not considered either. 
+
+# Conclusion
+Colonialism was bad news for native populations across all colonies. The places in the world where European settlers could settle had native populations being forced to give up their lands, let go of their culture and accept a foreign one as their own, and if that wasn't enough, they were being killed in the millions by European diseases like small  The colonies where europeans couldn't safely settle because of the prescence of endemic diseases like Yellow Fever and Malaria, natives faced exploitation, the robbery of resources and the establishment of weak political and legal structures that serve as obstacles for those countries to this day.
+
+# Ethics
+
+The article does not mention any ethical considerations made when analyzing this dataset. 
+
+
+
+
+
+# References
+
+### libraries used
+```{r, echo=FALSE}
+citation("tidyverse")
+```
+  H. Wickham. ggplot2: Elegant Graphics for Data Analysis.
+  Springer-Verlag New York, 2016.
+  
+  Wickham et al., (2019). Welcome to the tidyverse. Journal of
+  Open Source Software, 4(43), 1686,
+  https://doi.org/10.21105/joss.01686
+
+
+
+### Datasets used can be found here
+http://economics.mit.edu/faculty/acemoglu/data/ajr2001
+
+### Research sources
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1071659/
+https://en.wikipedia.org/wiki/Belgian_Congo
+https://www.vox.com/2014/6/24/5835320/map-in-the-whole-world-only-these-five-countries-escaped-european
+https://en.wikipedia.org/wiki/Rwandan_genocide
+https://www.britannica.com/place/Latin-America/The-independence-of-Latin-America
+https://www.historic-uk.com/HistoryUK/HistoryofBritain/Timeline-Industrial-Revolution/
+
+
+
+
+# Appendix
+
+
+
+
+```{r Appselect only 63 countries that are excolonies}
+countries<-tibble(country=data4$shortnam,
+                  dummy_africa=data4$africa,
+                  dummy_asia=data4$asia,
+                  dummy_neu=data4$rich4,
+                  britcol=data5$f_brit,
+                  frencol=data5$f_french,
+                  sample=data4$baseco
+                  )
+
+
+excolonies <- tibble(country=data4$shortnam,
+                     samples=data4$baseco,
+                     dummy_africa=data4$africa,
+                     dummy_asia=data4$asia,
+                     dummy_neu=data4$rich4,
+                     britcol=data5$f_brit,
+                     frencol=data5$f_french,
+                     landlocked=data6$landlock,
+                     settler_mortality=data4$logem4,
+                     expro_pro=data4$avexpr, 
+                     gdppc=data4$logpgp95
+          
+                     )%>% subset(samples==1)
+
+
+
+excolonies<-excolonies %>% mutate(counttrycol= case_when(
+                                  britcol==1~"British",
+                                  frencol==1~"French",
+                                  britcol==0~"Other",
+                                  frencol==0~"Other"))
+
+
+#latin american / caribbean countries
+
+excolonies<-
+  excolonies %>%
+  mutate(nonasaf= dummy_africa+dummy_asia+dummy_neu,
+         nonasaf=if_else(nonasaf==0,1,0))
+
+#only latin american and caribbean
+excolnocon <- excolonies %>% subset(dummy_africa==0)%>%
+  subset(dummy_asia==0)%>%
+  subset(dummy_neu==0)
+
+#excolonies is master table with everything
+
+#excolonies2 master table without dummy_neu, to take away outliers
+excolonies2<-excolonies[!(excolonies$dummy_neu==1),]
+
+
+#only africa
+african<-
+excolonies %>%
+  filter(dummy_africa == "1")
+
+# all colonies without africa
+non_african <-
+excolonies %>%
+  filter(dummy_africa == "0")
+
+#only asia
+asian<-excolonies %>%
+  filter(dummy_asia == "1")
+#all colonies without asia
+
+non_asian<-excolonies %>%
+  filter(dummy_asia == "0")
+#all colonies without latin america/caribbean
+nonlacar<- excolonies%>%
+  filter(nonasaf=="0")
+
+#only neo-europe
+neu <- excolonies %>%
+  filter(dummy_neu == "1")
+
+
+```
+### Histogram for Expropriation Protection across all colonies
+```{r histogram for gdp and expropriation}
+ggplot(data=excolonies,mapping=aes(x=expro_pro, fill=counttrycol))+
+  geom_histogram(position="dodge",binwidth=0.4)+theme_minimal()+scale_fill_brewer(palette = "Set1")
+#facet_wrap(vars(dummy_asia), nrow=2)
+
+```
+### Histogram for Expropriation Protection across all Non Neo-European Colonies
+```{r histogram for gdp and expropriation non neu}
+ggplot(data=excolonies2,mapping=aes(x=expro_pro, fill=counttrycol))+
+  geom_histogram(position="dodge",binwidth=0.4)+theme_minimal()+scale_fill_brewer(palette = "Set1")
+#facet_wrap(vars(dummy_asia), nrow=2)
+
+```
+
+### 2SLS Only Africa: Expropriation risk and GDP via Settler Mortality
+```{r lm mortalgdp only africa}
+mortalgdp <- lm(gdppc~settler_mortality, data=african)
+
+```
+```{r lm mortalexpro only africa}
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=african)
+
+```
+```{r only africa effect of expropriation on gdp }
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+#your gdp will increase by 2 points if you have strong expropriation laws
+
+first_stage3<-mortalexpro
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage3<-lm(gdppc~Expropriation_Protection,data=african)
+```
+```{r Applm mortalgdp non_african}
+mortalgdp <- lm(gdppc~settler_mortality, data=non_african)
+
+```
+```{r Applm mortalexpro non_african}
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=non_african)
+
+```
+```{r Appnon_african effect of expropriation on gdp }
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+first_stage4<-mortalexpro
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage4<-lm(gdppc~Expropriation_Protection,data=non_african)
+
+```
+
+```{r lm mortalgdp asian}
+mortalgdp <- lm(gdppc~settler_mortality, data=asian)
+
+```
+```{r lm mortalexpro asian}
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=asian)
+summary(mortalexpro)
+
+```
+```{r asian effect of expropriation on gdp }
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+first_stage5<-mortalexpro
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage5<-lm(gdppc~Expropriation_Protection,data=asian)
+
+```
+
+```{r lm mortalgdp non_asian}
+mortalgdp <- lm(gdppc~settler_mortality, data=non_asian)
+
+```
+```{r lm mortalexpro non_asian}
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=non_asian)
+
+
+```
+```{r non_asian effect of expropriation on gdp }
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+first_stage6<-mortalexpro
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage6<-lm(gdppc~Expropriation_Protection,data=non_asian)
+
+```
+
+```{r lm mortalgdp nonlacar}
+mortalgdp <- lm(gdppc~settler_mortality, data=nonlacar)
+```
+```{r lm mortalexpro nonlacar}
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=nonlacar)
+
+```
+```{r nonlacar effect of expropriation on gdp }
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+first_stage7<-mortalexpro
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage7<-lm(gdppc~Expropriation_Protection,data=nonlacar)
+
+```
+
+```{r lm mortalgdp neu}
+mortalgdp <- lm(gdppc~settler_mortality, data=neu)
+
+```
+```{r lm mortalexpro neu}
+mortalexpro <- lm(expro_pro~settler_mortality, data=neu)
+```
+```{r neu effect of expropriation on gdp }
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+first_stage8<-mortalexpro
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage8<-lm(gdppc~Expropriation_Protection,data=neu)
+
+```
+
+
+### Excolonies2 is includes all excolonies except the neo european first world countries
+```{r Applm mortalgdp excolonies2}
+mortalgdp <- lm(gdppc~settler_mortality, data=excolonies2)
+summary(mortalgdp)
+
+mortalexpro <- lm(expro_pro~settler_mortality, data=excolonies2)
+summary(mortalexpro)
+```
+```{r appexcolonies2 effect of expropriation on gdp }
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+
+first_stage2<-mortalexpro
+Expropriation_Protection<-mortalexpro$fitted.values
+second_stage2<-lm(gdppc~Expropriation_Protection,data=excolonies2)
+summary(second_stage2)
+
+```
+### Figure 4 GDP vs Settler mortality without Neu European Countries
+```{r mortalgdp excolonies2 graph}
+mortalgdp<-lm(gdppc~settler_mortality,data=excolonies2)
+summary(mortalgdp)
+ggplot(data=excolonies2)+
+  geom_point(mapping=aes(x=settler_mortality, 
+                         y=gdppc, color=counttrycol))+
+  geom_abline(intercept = 10.344, 
+              slope=-0.501, color="red")
+              slope=-0.391, color="red")+labs(title="Figure 4: Relationship between Settler Mortality and GDP",x="Settler Mortality", y="Expropriation Protection",colour="Colonial Power")
+
+```
+```{r mortalexpro excolonies2 graph}
+mortalexpro<-lm(expro_pro~settler_mortality,data=excolonies2)
+summary(mortalexpro)
+ggplot(data=excolonies2)+
+  geom_point(mapping=aes(x=settler_mortality,
+                         y=expro_pro,colour=counttrycol))+
+  geom_abline(intercept = 8.184, 
+              slope=-0.391, color="red")+labs(title="Figure 5: Relationship between Settler Mortality and Expropriation Protection",x="Settler Mortality", y="Expropriation Protection",colour="Colonial Power")
+
+```
+```{r expro vs gdp non neo euro, echo=FALSE}
+exprogdp2<-lm(gdppc~expro_pro, data=excolonies2)
+
+ggplot(data=excolonies2)+
+  geom_point(mapping=aes(x=expro_pro, 
+                         y=gdppc, color=counttrycol))+
+  geom_abline(intercept = 4.867, 
+              slope=0.487, color="red")+theme(legend.position = "bottom",
+        text=element_text(size=10))+labs(title="Figure 6: Expropriation Protection VS GDP",x="Protection Against Expropriation", y="GDP Per Capita",colour="Colonial Power")
+
+```
+### Excolonies contains all colonies including first world countries
+```{r Appmortal gdp expro for all excolonies}
+mortalgdp<- lm(gdppc~settler_mortality, data=excolonies)
+summary(mortalgdp)
+mortalexpro<-lm(expro_pro~settler_mortality, data=excolonies)
+summary(mortalexpro)
+coef(mortalgdp)["settler_mortality"]/ coef(mortalexpro)["settler_mortality"]
+
+```
+```{r App2 stages effect of expropriation on GDP}
+first_stage <- lm(expro_pro~settler_mortality, data=excolonies)
+Expropriation_Protection <- first_stage$fitted.values
+second_stage <- lm(gdppc~Expropriation_Protection, data=excolonies)
+
+
+```
+
+### Excolnocon are the colonies from latin america and the caribbean
+```{r mortal gdp excolnocon la/carib colonies}
+# relation b/w settler mortality,gdp and expropriation for latin american and caribbean countries
+
+mortalgdpnocon <- lm(gdppc~settler_mortality, data=excolnocon)
+mortalexpronocon <- lm(expro_pro~settler_mortality, data=excolnocon)
+summary(mortalgdpnocon)
+summary(mortalexpronocon)
+
+coef(mortalgdpnocon)["settler_mortality"]/coef(mortalexpronocon)["settler_mortality"]
+
+
+first_stage1<-mortalexpronocon
+Expropriation_Protection<-mortalexpronocon$fitted.values
+second_stage1<-lm(gdppc~Expropriation_Protection,data=excolnocon)
+summary(second_stage1)
+
+```
+```{r LA and Carib colonies }
+ggplot(data=excolnocon)+
+  geom_point(mapping=aes(x=settler_mortality, 
+                         y=gdppc, color=counttrycol))+facet_wrap(~counttrycol)+ylim(4,10)+
+  geom_abline(intercept = 10.55, slope=-0.4687, color="red")
+
+```
+
+```{r AppOLS regression of colonies}
+#excolonies
+exprogdp<-lm(gdppc~expro_pro, data=excolonies)
+
+#excolonies2
+exprogdp2<-lm(gdppc~expro_pro, data=excolonies2)
+exprogdp2
+
+#non_african
+exprogdpnonaf<-lm(gdppc~expro_pro, data=non_african)
+
+#Neo European
+exprogdpneu<-lm(gdppc~expro_pro, data=neu)
+#African
+exprogdpaf<-lm(gdppc~expro_pro, data=african)
+#Asian
+exprogdpas<-lm(gdppc~expro_pro, data=asian)
+#Latin American and Caribbean 
+exprogdplacar<-lm(gdppc~expro_pro, data=excolnocon)
+```
+
+```{r Appsummary stats table}
+exclusive_second_stage<-huxreg("Neu"=second_stage8,"Africa"=second_stage3,  "Asia"=second_stage5,"Latin/Carib"= second_stage1)
+
+exclusive_first_stage<-huxreg("Neu"=first_stage8,"Africa"=first_stage3,
+                              "Asia"=first_stage5,"Latin/Carib"= first_stage1)
+exclusive_ols<-huxreg("Neu"=exprogdpneu,"Africa"=exprogdpaf,  "Asia"=exprogdpas,"Latin/Carib"= exprogdplacar)
+
+exclusive_summary<-rbind(exclusive_second_stage,exclusive_first_stage,exclusive_ols)
+exclusive_summary
+
+inclusive_first_stage<-huxreg("Excolonies"=first_stage, "Non Neu"=first_stage2, "Non_African"=first_stage4)
+caption(inclusive_first_stage)<-"First Stage for Average Protection against Expropriation"
+
+inclusive_second_stage<-huxreg("Excolonies"=second_stage,"Non Neu"=second_stage2,"Non_African"=second_stage4)
+caption(inclusive_second_stage)<-"Two Stage Least Squares"
+
+inclusive_ols<-huxreg("Excolonies"=exprogdp, "Non Neu"=exprogdp2, "Non_African"=exprogdpnonaf)
+caption(inclusive_ols)<-"Ordinary Least Squares"
+inclusive_summary<-rbind(inclusive_second_stage,inclusive_first_stage,inclusive_ols)
+caption(inclusive_summary)<-"Table 1: Summary Statistics of Variables Considered"
+
+Exclusive_table
+Exclusive_first_stage
+Inclusive_table
+#inclusive_first_stage
+inclusive_summary
+
+
+
+```
+
