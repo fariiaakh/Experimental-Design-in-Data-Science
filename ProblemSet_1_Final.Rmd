@@ -1,0 +1,69 @@
+---
+title: "Exploratory Analysis on the Number of Playgrounds in Toronto by Property Type"
+author: "Faria Khandaker, Michal Telem, Ruizhi Xu"
+date: "01/26/2020"
+output: pdf_document
+fontsize: 12pt
+abstract: "In this document we attempted to explore the availability of playgrounds in rent properties in Toronto, based on three different property types stated in the Apartment Building Registration Dataset from Toronto's Open Data Portal. We found higher occurrences of playgrounds in Private rental Properties than Social Housing or Toronto Community Housing. This may be indicative of deeper social issues with regards to children's accessibility to outdoor recreation facilities dependent on their housing situation."
+---
+
+```{r include=FALSE}
+library(opendatatoronto)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+knitr::opts_chunk$set(fig.width=6, fig.height=4) 
+```
+### Introduction
+This is an exploratory analysis of playgrounds facility as a part of rental properties in Toronto. The Apartment Building Registration Dataset was created by the City of Toronto, as a part of the Apartment Building Standard Program, to evaluate housing units and their facilities. The data was collected from property owners and building managers who participate in the program. The Dataset contains all reported rental apartment buildings in Toronto with three or more stories and 10 or more units.
+
+### Discussion
+The dataset contains three property types, namely Social Housing, Private Housing and Toronto Community Housing Corporation (TCHC).Most of the data was of qualitative nature and focused on the existence or description of certain facilities. We decided to compare the existence of playground facilities across the three property types. Therefore, for each property type we created a subset of the properties that have 'PLAYGROUND'. Then, we counted, for each property type, the number of properties with 'PLAYGROUND' occurrence in the dataset.A bar graph was created based on this count.
+As shown in Figure 1, the vast majority of rental properties that have playgrounds are Private. TCHC was hardcoded into the code block as there were no "PLAYGROUND" values listed within the dataset for TCHC. The difference between social housing and TCHC is that social housing refers to property owners who have partnered with the city to provide rent subsidies to qualified people and TCHC is an agency of the city of Toronto. There are a few weaknesses to our analysis. Firstly, "PLAYGROUND" is only one of many entries into the column "DESCRIPTION OF CHILD'S PLAY AREA". Other entries included "SWINGS", "SLIDES", etc.
+Also, the description of the play area is qualitative and owner subjective. So it is likely that TCHC properties described their play areas differently than private and social housing properties. Therefore, our findings do not provide a full representation of the play areas available in social and TCHC properties. In addition, the majority of the properties reported in the dataset are privately owned. Thus it is possible that the graph only represents the higher instances of private properties rather than higher likelihood of playgrounds for this property type.
+```{r include=FALSE} 
+Apartment_Building_Registration_packages <- 
+  search_packages("Apartment Building Registration")
+Apartment_Building_Registration_resources <- 
+  Apartment_Building_Registration_packages %>%
+  list_package_resources()
+```
+```{r include=FALSE}
+Apartment_Building_Registration_statistics <-
+  Apartment_Building_Registration_resources %>%
+  get_resource()
+
+#summary(Apartment_Building_Registration_statistics)
+```
+```{r include=FALSE}
+property_counts <- Apartment_Building_Registration_statistics %>%
+  group_by(PROPERTY_TYPE) %>%
+  summarise(number_of_property = n())
+property_counts
+```
+```{r}
+playground <- subset(Apartment_Building_Registration_statistics,
+                     Apartment_Building_Registration_statistics
+                     $DESCRIPTION_OF_CHILD_PLAY_AREA== "PLAYGROUND")
+playground_count <- table(playground$PROPERTY_TYPE)%>%
+  cbind.data.frame()
+c <- rbind(data.frame(Var1 = 'TCHC', Freq = 0), playground_count)
+ggplot()+
+  geom_col(data = c,aes(x= Var1, y = Freq)) +
+  labs(title = "Figure 1: Playgrounds at Different Properties", 
+       x = "Property Type",
+       y = "Num of Playground")
+```
+
+### References
+
+City of Toronto. Apartment Buildings Registration dataset. In: Toronto Open Data Portal. https://open.toronto.ca/dataset/apartment-building-registration/. Accessed 23 Jan 2020.
+
+City of Toronto (2019). Social Community Providers. In: Toronto. https://www.toronto.ca/community-people/community-partners/social-housing-providers/. Accessed 23 Jan 2020.
+
+Wikipedia (2019). Toronto Community Housing. In: Wikipedia. https://en.wikipedia.org/wiki/Toronto_Community_Housing. Accessed 23 Jan 2020.
+
+
+
+ 
+ 
